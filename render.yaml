@@ -1,0 +1,67 @@
+# Render Blueprint for Firecrawl Self-Hosted Deployment
+# Docs: https://docs.render.com/blueprint-spec
+
+services:
+  # --- Main API + Workers ---
+  - type: web
+    name: firecrawl-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: standard
+    healthCheckPath: /
+    envVars:
+      - key: HOST
+        value: "0.0.0.0"
+      - key: PORT
+        value: "3002"
+      - key: NUM_WORKERS_PER_QUEUE
+        value: "8"
+      - key: REDIS_URL
+        fromService:
+          name: firecrawl-redis
+          type: redis
+          property: connectionString
+      - key: REDIS_RATE_LIMIT_URL
+        fromService:
+          name: firecrawl-redis
+          type: redis
+          property: connectionString
+      - key: PLAYWRIGHT_MICROSERVICE_URL
+        fromService:
+          name: firecrawl-playwright
+          type: pserv
+          envVarKey: RENDER_SERVICE_URL
+      - key: NUQ_DATABASE_URL
+        fromDatabase:
+          name: firecrawl-postgres
+          property: connectionString
+      - key: USE_DB_AUTHENTICATION
+        value: "false"
+      - key: LOGGING_LEVEL
+        value: "INFO"
+      - key: BULL_AUTH_KEY
+        generateValue: true
+
+  # --- Playwright Browser Service (internal only) ---
+  - type: pserv
+    name: firecrawl-playwright
+    runtime: docker
+    dockerfilePath: ./apps/playwright-service-ts/Dockerfile
+    dockerContext: ./apps/playwright-service-ts
+    plan: standard
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: RENDER_SERVICE_URL
+        value: "http://firecrawl-playwright:3000/scrape"
+
+databases:
+  - name: firecrawl-postgres
+    plan: starter
+    databaseName: firecrawl
+    user: firecrawl
+
+  - name: firecrawl-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
