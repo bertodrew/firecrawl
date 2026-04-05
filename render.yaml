@@ -64,4 +64,4 @@ databases:
 
   - name: firecrawl-redis
     plan: starter
-    maxmemoryPolicy: allkeys-lru
+    ipAllowList: [] # allow all connections
