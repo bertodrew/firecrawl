@@ -20,12 +20,12 @@ services:
       - key: REDIS_URL
         fromService:
           name: firecrawl-redis
-          type: redis
+          type: keyvalue
           property: connectionString
       - key: REDIS_RATE_LIMIT_URL
         fromService:
           name: firecrawl-redis
-          type: redis
+          type: keyvalue
           property: connectionString
       - key: PLAYWRIGHT_MICROSERVICE_URL
         fromService:
@@ -56,12 +56,15 @@ services:
       - key: RENDER_SERVICE_URL
         value: "http://firecrawl-playwright:3000/scrape"
 
+  # --- Key Value Store (Redis/Valkey) ---
+  - type: keyvalue
+    name: firecrawl-redis
+    plan: free
+    ipAllowList: []
+
 databases:
   - name: firecrawl-postgres
-    plan: starter
+    plan: free
     databaseName: firecrawl
     user: firecrawl
-
-  - name: firecrawl-redis
-    plan: starter
-    ipAllowList: [] # allow all connections
+    ipAllowList: []
